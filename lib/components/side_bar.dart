@@ -1,0 +1,183 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:mad_ccp/models/user_model.dart';
+import 'package:mad_ccp/providers/progress_provider.dart';
+import 'package:mad_ccp/providers/user_provider.dart';
+import 'package:mad_ccp/screens/login_screen.dart';
+import 'package:mad_ccp/screens/progress_screen.dart';
+import 'package:mad_ccp/utils/auth_methods.dart';
+import 'package:mad_ccp/utils/colors.dart';
+import 'package:mad_ccp/utils/fonts.dart';
+import 'package:mad_ccp/utils/progress_methods.dart';
+import 'package:mad_ccp/utils/utils.dart';
+import 'package:provider/provider.dart';
+
+class SideBar extends StatefulWidget {
+  const SideBar({super.key});
+
+  @override
+  State<SideBar> createState() => _SideBarState();
+}
+
+class _SideBarState extends State<SideBar> {
+  void logout() async {
+    String res = await AuthMethods().signOut();
+    if (res == "Success") {
+      // ignore: use_build_context_synchronously
+      showSnackBar("Signed out", context);
+    }
+    // ignore: use_build_context_synchronously
+    Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const Login()),
+        (Route<dynamic> route) => false);
+  }
+
+  final ProgressMethods _progressMethods = ProgressMethods();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  void resetProgress() async {
+    _progressMethods.updateProgress(_auth.currentUser!.uid, "counting", 1);
+    _progressMethods.updateProgress(_auth.currentUser!.uid, "spelling", 1);
+    await Provider.of<ProgressProvider>(context, listen: false)
+        .refreshProgress(_auth.currentUser!.uid);
+    // close the drawer
+    // ignore: use_build_context_synchronously
+    Navigator.pop(context);
+    // ignore: use_build_context_synchronously
+    showSnackBar("Progress Reset Successfully", context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    UserModel user = Provider.of<UserProvider>(context).getUser as UserModel;
+    return Drawer(
+      backgroundColor: AppColors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: SafeArea(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    user.fullName,
+                    style: TextStyle(
+                      fontFamily: AppFonts.openSans,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w300,
+                    ),
+                  ),
+                  Text(
+                    user.email,
+                    style: TextStyle(
+                      fontFamily: AppFonts.openSans,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 16,
+                  ),
+                  Text(
+                    "My Score",
+                    style: TextStyle(
+                      fontFamily: AppFonts.valeriaRound,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 8,
+                  ),
+                  ListTile(
+                    tileColor: AppColors.primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.all(12),
+                    titleTextStyle: TextStyle(
+                      fontFamily: AppFonts.valeriaRound,
+                      color: AppColors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 32,
+                    ),
+                    title: Center(
+                      child: Text("${user.score}"),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 16,
+                  ),
+                  ListTile(
+                    onTap: () {
+                      Navigator.pushReplacement(context,
+                          MaterialPageRoute(builder: (context) {
+                        return const ProgressScreen();
+                      }));
+                    },
+                    contentPadding: const EdgeInsets.all(12),
+                    tileColor: AppColors.accentColor,
+                    titleTextStyle: TextStyle(
+                      fontFamily: AppFonts.valeriaRound,
+                      color: AppColors.white,
+                      fontSize: 24,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    title: const Text("My Progress"),
+                    leading: const Icon(
+                      Icons.bar_chart,
+                      color: AppColors.white,
+                    ),
+                  )
+                ],
+              ),
+              Column(
+                children: [
+                  ListTile(
+                    tileColor: AppColors.primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    titleTextStyle: TextStyle(
+                      fontFamily: AppFonts.valeriaRound,
+                      color: AppColors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    title: const Center(
+                      child: Text("Reset Progress"),
+                    ),
+                    onTap: resetProgress,
+                  ),
+                  const SizedBox(
+                    height: 16,
+                  ),
+                  ListTile(
+                    tileColor: AppColors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    titleTextStyle: TextStyle(
+                      fontFamily: AppFonts.valeriaRound,
+                      color: AppColors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    title: const Center(
+                      child: Text("Sign Out"),
+                    ),
+                    onTap: logout,
+                  ),
+                ],
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
